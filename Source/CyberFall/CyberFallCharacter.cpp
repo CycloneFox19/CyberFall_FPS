@@ -9,10 +9,12 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "Weapon.h"
 
 // Sets default values
 ACyberFallCharacter::ACyberFallCharacter()
-	: CameraSocketName(TEXT("VB head_root"))
+	: CameraSocketName(TEXT("head"))
 	, BaseTurnRate(1.f)
 	, HipTurnRate(1.f)
 	, AimingTurnRate(0.6f)
@@ -21,21 +23,11 @@ ACyberFallCharacter::ACyberFallCharacter()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(GetMesh(), CameraSocketName);
-	CameraBoom->bUsePawnControlRotation = true;
-	CameraBoom->TargetArmLength = 0.f;
-	CameraBoom->SetRelativeLocation(CameraBoomOffset);
-
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	FollowCamera->bUsePawnControlRotation = false;
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	Camera->SetupAttachment(GetMesh(), CameraSocketName);
+	Camera->bUsePawnControlRotation = true;
 
 	BaseTurnRate = HipTurnRate;
-
-	bUseControllerRotationRoll = false;
-	bUseControllerRotationPitch = true;
-	bUseControllerRotationYaw = true;
 
 	Speed = WalkSpeed;
 }
@@ -44,6 +36,21 @@ ACyberFallCharacter::ACyberFallCharacter()
 void ACyberFallCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (HasAuthority())
+	{
+		for (const TSubclassOf<AWeapon>& WeaponClass : DefaultWeapons)
+		{
+			if (!WeaponClass)
+			{
+				continue;
+			}
+
+			FActorSpawnParameters Params = {};
+			Params.Owner = this;
+			TObjectPtr<AWeapon> SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(WeaponClass, Params);
+		}
+	}
 
 	if (TObjectPtr<APlayerController> PlayerController = Cast<APlayerController>(GetController()))
 	{
@@ -54,6 +61,13 @@ void ACyberFallCharacter::BeginPlay()
 	}
 	
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void ACyberFallCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ACyberFallCharacter, Weapons, COND_None);
 }
 
 // Called every frame
@@ -102,13 +116,8 @@ void ACyberFallCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-TObjectPtr<USpringArmComponent> ACyberFallCharacter::GetCameraBoom() const
-{
-	return CameraBoom;
-}
-
 TObjectPtr<UCameraComponent> ACyberFallCharacter::GetFollowCamera() const
 {
-	return FollowCamera;
+	return Camera;
 }
 

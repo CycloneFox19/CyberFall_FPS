@@ -20,6 +20,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -30,21 +32,13 @@ public:
 protected:
 	/** Camera variables */
 
-	// Camera boom
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-	TObjectPtr<class USpringArmComponent> CameraBoom;
-
 	// Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-	TObjectPtr<class UCameraComponent> FollowCamera;
+	TObjectPtr<class UCameraComponent> Camera;
 
 	// Name of the socket to which camera is attached
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
 	FName CameraSocketName;
-
-	// Local offset of camera boom
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
-	FVector CameraBoomOffset;
 
 	float BaseTurnRate;
 
@@ -53,6 +47,18 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
 	float AimingTurnRate;
+
+protected:
+	/** Weapon variables and functions */
+
+	// The weapons spawned by default
+	UPROPERTY(EditDefaultsOnly, Category = Configurations)
+	TArray<TSubclassOf<class AWeapon>> DefaultWeapons;
+
+public:
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated, Category = State)
+	TArray<TObjectPtr<class AWeapon>> Weapons;
 
 protected:
 	/** Variables and functions related to input */
@@ -65,19 +71,19 @@ protected:
 	TObjectPtr<class UInputAction> MoveAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
-	TObjectPtr<UInputAction> LookAction;
+	TObjectPtr<class UInputAction> LookAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
-	TObjectPtr<UInputAction> JumpAction;
+	TObjectPtr<class UInputAction> JumpAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
-	TObjectPtr<UInputAction> FireAction;
+	TObjectPtr<class UInputAction> FireAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
-	TObjectPtr<UInputAction> AimAction;
+	TObjectPtr<class UInputAction> AimAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input)
-	TObjectPtr<UInputAction> ReloadAction;
+	TObjectPtr<class UInputAction> ReloadAction;
 
 	void Move(const FInputActionValue& Value);
 
@@ -95,8 +101,7 @@ protected:
 
 public:
 	/** Public getters */
-	FORCEINLINE TObjectPtr<USpringArmComponent> GetCameraBoom() const;
 
-	FORCEINLINE TObjectPtr<UCameraComponent> GetFollowCamera() const;
+	FORCEINLINE TObjectPtr<class UCameraComponent> GetFollowCamera() const;
 
 };
