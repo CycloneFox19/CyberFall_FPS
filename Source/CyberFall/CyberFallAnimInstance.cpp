@@ -3,9 +3,15 @@
 
 #include "CyberFallAnimInstance.h"
 #include "CyberFallCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 UCyberFallAnimInstance::UCyberFallAnimInstance()
 	: SpineRotationOffset(FRotator(0.f, 0.f, 0.f))
+	, Speed(0.f)
+	, bIsInAir(false)
+	, bIsAccelerating(false)
+	, MovementOffsetYaw(0.f)
 {
 }
 
@@ -18,6 +24,14 @@ void UCyberFallAnimInstance::UpdateAnimationProperties(float DeltaTime)
 
 	if (CyberFallCharacter)
 	{
+		Speed = CyberFallCharacter->GetVelocity().Size();
+		bIsInAir = CyberFallCharacter->GetCharacterMovement()->IsFalling();
+		bIsAccelerating = CyberFallCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f;
+
+		const FRotator AimRotation = CyberFallCharacter->GetBaseAimRotation();
+		const FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(CyberFallCharacter->GetVelocity());
+		MovementOffsetYaw = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
+
 		const float UpperAngle = 360.f - CyberFallCharacter->GetControlRotation().Pitch;
 		const float LowerAngle = -CyberFallCharacter->GetControlRotation().Pitch;
 		SpineRotationOffset.Roll = (CyberFallCharacter->GetControlRotation().Pitch > 180.f) ? UpperAngle : LowerAngle;
